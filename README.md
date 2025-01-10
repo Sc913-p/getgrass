@@ -1,10 +1,8 @@
-# GetGrass Auto Farmer
+# GetGrass Auto Farmer Free Proxy
 GetGrass.io Auto Farmer | Automate Farming Grass use Python and Proxies.
 ## Tools and components required
 1. GetGrass.io Account UserID | Register: [https://app.getgrass.io](https://app.getgrass.io/register/?referralCode=My3VMYovzKfzqPF)
-2. Proxies
-3. VPS or RDP (OPTIONAL)
-4. Python version 3.10 or Latest
+2. Python version 3.10 or Latest
 
 # Notes
 - Run this bot, use my referrer code if you don't have one.
