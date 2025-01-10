@@ -12,17 +12,6 @@ from websockets_proxy import Proxy, proxy_connect
 
 init(autoreset=True)
 
-BANNER = """
-▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
-▐ ██████╗ ███████╗████████╗     ██████╗ ██████╗  █████╗ ███████╗███████╗▌
-▐██╔════╝ ██╔════╝╚══██╔══╝    ██╔════╝ ██╔══██╗██╔══██╗██╔════╝██╔════╝▌
-▐██║  ███╗█████╗     ██║       ██║  ███╗██████╔╝███████║███████╗███████╗▌
-▐██║   ██║██╔══╝     ██║       ██║   ██║██╔══██╗██╔══██║╚════██║╚════██║▌
-▐╚██████╔╝███████╗   ██║       ╚██████╔╝██║  ██║██║  ██║███████║███████║▌
-▐ ╚═════╝ ╚══════╝   ╚═╝        ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝▌
-▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
-"""
-
 EDGE_USERAGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.2365.57",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.2365.52",
@@ -87,7 +76,7 @@ async def connect_to_wss(socks5_proxy, user_id, mode):
     
     while True:
         try:
-            await asyncio.sleep(random.randint(1, 10) / 10)
+            await asyncio.sleep(random.uniform(0.1, 1.0))
             custom_headers = {
                 "User-Agent": random_user_agent,
                 "Origin": "chrome-extension://lkbnfiajjmbhnfledhphioinpickokdi" if mode == "extension" else None
@@ -131,9 +120,8 @@ async def connect_to_wss(socks5_proxy, user_id, mode):
                             )
                             
                             await websocket.send(send_message)
-                        await asyncio.sleep(5)
+                        await asyncio.sleep(60)
 
-                await asyncio.sleep(1)
                 ping_task = asyncio.create_task(send_ping())
 
                 while True:
@@ -247,10 +235,8 @@ async def connect_to_wss(socks5_proxy, user_id, mode):
                 message_content=str(e),
                 mode=mode
             )
-            await asyncio.sleep(5)
 
 async def main():
-    print(f"{Fore.CYAN}{BANNER}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}Archdrop{Style.RESET_ALL}")
     
     print(f"{Fore.GREEN}Select Mode:{Style.RESET_ALL}")
@@ -268,13 +254,26 @@ async def main():
     
     _user_id = input('Please Enter your user ID: ')
     
-    with open('proxy_list.txt', 'r') as file:
-        local_proxies = file.read().splitlines()
+    r = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all&protocol=http", stream=True)
+    if r.status_code == 200:
+       with open('auto_proxies.txt', 'wb') as f:
+           for chunk in r:
+               f.write(chunk)
+       prefix = 'http://'  
+       suffix = ''  
+       dest = ''
+       with open('auto_proxies.txt', 'r') as src:
+           with open('auto_proxies_http.txt', 'w') as dest:  
+               for line in src:  
+                   dest.write('%s%s%s\n' % (prefix, line.rstrip('\n'), suffix))
+       with open('auto_proxies_http.txt', 'r') as file:
+               auto_proxy_list = file.read().splitlines()
+
+    print(f"{Fore.YELLOW}Total Proxies: {len(auto_proxy_list)}{Style.RESET_ALL}")
     
-    print(f"{Fore.YELLOW}Total Proxies: {len(local_proxies)}{Style.RESET_ALL}")
-    
-    tasks = [asyncio.ensure_future(connect_to_wss(i, _user_id, mode)) for i in local_proxies]
+    tasks = [asyncio.ensure_future(connect_to_wss(i, _user_id, mode)) for i in auto_proxy_list]
     await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
     asyncio.run(main())
+
